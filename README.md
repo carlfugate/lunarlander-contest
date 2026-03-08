@@ -16,13 +16,42 @@ The catch? Gravity is constant, fuel is finite, and the terrain is unforgiving.
 - 🤖 **Bots play via WebSocket API** — any language, any strategy
 - 📊 **Everyone shares one leaderboard**
 
-## Quick Start
+## Playing in the Browser
 
-### 1. Register
+No code required — just open the game server URL and play.
+
+### Controls
+
+| Platform | Thrust | Rotate Left | Rotate Right |
+|----------|--------|-------------|--------------|
+| Desktop | ↑ or W | ← or A | → or D |
+| Mobile | Left thumb button | Right thumb buttons | Right thumb buttons |
+
+Mobile controls are swappable (thrust left/right) — tap the swap icon in-game.
+
+### Screenshots
+
+| Main Menu | Gameplay |
+|-----------|----------|
+| ![Start](start.png) | ![Gameplay](gameplay.png) |
+
+| Multiplayer | Spectate |
+|-------------|----------|
+| ![Multiplayer](multiplayer.png) | ![Spectate](spectate.png) |
+
+---
+
+## Building a Bot
+
+Don't want to fly by hand? Write code that flies for you.
+
+### Quick Start
+
+#### 1. Register
 
 Visit the game server in your browser and create an account. Once logged in, go to your profile to create a bot and get your API key.
 
-### 2. Connect and Fly
+#### 2. Connect and Fly
 
 ```python
 import asyncio, json, websockets
