@@ -70,7 +70,7 @@ Bots authenticate via the `X-API-Key` header on the WebSocket connection. The se
 | `input` | `action` | Send a control input |
 | `ping` | — | Keep-alive |
 
-Actions: `thrust`, `rotate_left`, `rotate_right`, `thrust_off`, `rotate_left_off`, `rotate_right_off`
+Actions: `thrust`, `thrust_off`, `rotate_left`, `rotate_right`, `rotate_stop`
 
 ### Messages you receive
 
@@ -103,7 +103,7 @@ Actions: `thrust`, `rotate_left`, `rotate_right`, `thrust_off`, `rotate_left_off
 
 > **Important:** Terrain and constants are only sent in `init`. Store them — they don't change during the game.
 
-**`telemetry`** — Sent at 60Hz during gameplay:
+**`telemetry`** — Sent at 30Hz during gameplay:
 ```json
 {
   "type": "telemetry",
@@ -237,7 +237,7 @@ All endpoints require `Authorization: Bearer TOKEN` header.
 
 ## Tips
 
-- Telemetry arrives at 60Hz — you don't need to respond to every frame
+- Telemetry arrives at 30Hz — you don't need to respond to every frame
 - `vy` is positive downward — higher values mean falling faster
 - `rotation` is in radians — 0 is upright, positive is clockwise
 - Fuel is finite — use short thrust bursts

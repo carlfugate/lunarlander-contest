@@ -25,6 +25,7 @@ class SimpleLanderAI:
         self.running = False
         self.last_thrust = False
         self.last_rotate = None
+        self.frame = 0
         
     async def play(self):
         async with websockets.connect(self.uri) as websocket:
@@ -138,7 +139,8 @@ class SimpleLanderAI:
             self.last_thrust = desired_thrust
         
         # Debug output
-        if int(data['timestamp'] * 2) % 2 == 0:
+        self.frame += 1
+        if self.frame % 30 == 0:
             print(f"Alt: {altitude:.0f}, Speed: {speed:.1f}, Vx: {lander['vx']:.1f}, Vy: {lander['vy']:.1f}, "
                   f"X-err: {x_error:.0f}, Angle: {lander['rotation']*57.3:.1f}°, "
                   f"Fuel: {lander['fuel']:.0f}, Thrust: {'ON' if desired_thrust else 'OFF'}")
