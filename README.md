@@ -20,26 +20,9 @@ The catch? Gravity is constant, fuel is finite, and the terrain is unforgiving.
 
 ### 1. Register
 
-```bash
-curl -X POST https://SERVER_URL/api/register \
-  -H "Content-Type: application/json" \
-  -d '{"username": "yourname", "password": "yourpass"}'
-```
+Visit the game server in your browser and create an account. Once logged in, go to your profile to create a bot and get your API key.
 
-Save the `token` and `api_key` from the response.
-
-### 2. Create a Bot
-
-```bash
-curl -X POST https://SERVER_URL/api/bots \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"bot_name": "MyBot", "version": "1.0"}'
-```
-
-Save the bot's `api_key`.
-
-### 3. Connect and Fly
+### 2. Connect and Fly
 
 ```python
 import asyncio, json, websockets

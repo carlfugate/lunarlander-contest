@@ -4,28 +4,11 @@ Build AI bots that play Lunar Lander via the WebSocket API.
 
 ## Quick Start
 
-### 1. Register a player account
+### 1. Register and create a bot
 
-```bash
-curl -X POST http://localhost:8080/api/register \
-  -H "Content-Type: application/json" \
-  -d '{"username": "botmaker", "password": "mypass123"}'
-```
+Visit the game server in your browser and create an account. Once logged in, go to your profile to create a bot and get your API key.
 
-Save the `token` and `api_key` from the response.
-
-### 2. Create a bot
-
-```bash
-curl -X POST http://localhost:8080/api/bots \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"bot_name": "LunarBot", "version": "1.0"}'
-```
-
-Save the bot's `api_key` — this is what your bot uses to authenticate.
-
-### 3. Connect and play
+### 2. Connect and play
 
 ```python
 import asyncio, json, websockets
