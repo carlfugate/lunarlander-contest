@@ -87,11 +87,13 @@ That's it. You're flying.
 | [Scoring](docs/SCORING.md) | How points are calculated |
 | [Examples](examples/) | Working bot implementations to get you started |
 
+## ⚠️ Work in Progress
+
+This competition is under active development. Rules, scoring, prizes, and server details will be finalized before the conference. Star this repo to get updates as things come together.
+
 ## Server URL
 
-The game server will be live at the conference. URL will be announced at the event.
-
-<!-- TODO: Update with actual server URL -->
+The game server will be live at the conference. URL will be announced closer to the event.
 
 ## Rules
 
