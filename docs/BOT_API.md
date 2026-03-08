@@ -28,9 +28,11 @@ async def play():
             "bot_version": "1.0"
         }))
 
-        # Receive init (terrain + starting position)
+        # Receive init (terrain, starting position, physics constants)
         init = json.loads(await ws.recv())
-        print(f"Terrain points: {len(init['terrain'])}")
+        terrain = init["terrain"]
+        constants = init["constants"]
+        print(f"Difficulty: {init['difficulty']}, Landing zones: {len(terrain['landing_zones'])}")
 
         # Game loop — receive telemetry, send inputs
         while True:
@@ -41,9 +43,9 @@ async def play():
                 # Your AI logic here
                 if lander["vy"] > 3.0:
                     await ws.send(json.dumps({"type": "input", "action": "thrust"}))
-                if lander["rotation"] > 5:
+                if lander["rotation"] > 0.1:
                     await ws.send(json.dumps({"type": "input", "action": "rotate_left"}))
-                elif lander["rotation"] < -5:
+                elif lander["rotation"] < -0.1:
                     await ws.send(json.dumps({"type": "input", "action": "rotate_right"}))
 
             elif msg["type"] == "game_over":
@@ -64,11 +66,13 @@ Bots authenticate via the `X-API-Key` header on the WebSocket connection. The se
 
 | Type | Fields | Description |
 |------|--------|-------------|
-| `start` | `difficulty`, `bot_name`, `bot_version` | Start a game |
+| `start` | `difficulty`, `bot_name`, `bot_version`, `telemetry_mode` | Start a game |
 | `input` | `action` | Send a control input |
 | `ping` | — | Keep-alive |
 
 Actions: `thrust`, `rotate_left`, `rotate_right`, `thrust_off`, `rotate_left_off`, `rotate_right_off`
+
+Telemetry modes: `standard` (default), `advanced` (adds prediction fields — see below)
 
 ### Messages you receive
 
@@ -76,23 +80,62 @@ Actions: `thrust`, `rotate_left`, `rotate_right`, `thrust_off`, `rotate_left_off
 ```json
 {
   "type": "init",
-  "terrain": [[0, 500], [50, 480], ...],
+  "difficulty": "simple",
+  "terrain": {
+    "points": [[0, 700], [50, 680], ...],
+    "landing_zones": [{"x1": 400, "x2": 500, "y": 700, "multiplier": 1.0}],
+    "width": 1200,
+    "height": 800
+  },
   "lander": {"x": 600, "y": 100, "vx": 0, "vy": 0, "rotation": 0, "fuel": 1000},
-  "landing_zones": [{"x1": 400, "x2": 500, "y": 450}]
+  "constants": {
+    "gravity": 1.62,
+    "thrust_power": 8.0,
+    "rotation_speed": 3.0,
+    "fuel_consumption_rate": 10.0,
+    "max_fuel": 1000.0,
+    "max_landing_speed": 5.0,
+    "max_landing_angle": 0.3,
+    "terrain_width": 1200,
+    "terrain_height": 800,
+    "max_possible_score": 1800
+  }
 }
 ```
+
+> **Important:** Terrain and constants are only sent in `init`. Store them — they don't change during the game.
 
 **`telemetry`** — Sent at 60Hz during gameplay:
 ```json
 {
   "type": "telemetry",
-  "lander": {"x": 601, "y": 102, "vx": 0.1, "vy": 1.2, "rotation": -2, "fuel": 998},
+  "lander": {"x": 601, "y": 102, "vx": 0.1, "vy": 1.2, "rotation": -0.05, "fuel": 998},
   "altitude": 348,
+  "terrain_height": 450,
   "speed": 1.2,
   "thrusting": false,
-  "nearest_landing_zone": {"x1": 400, "x2": 500, "distance": 201}
+  "nearest_landing_zone": {
+    "x1": 400, "x2": 500, "center_x": 450, "y": 700,
+    "width": 100, "distance": 151, "direction": "left"
+  },
+  "spectator_count": 3
 }
 ```
+
+**`telemetry` (advanced mode)** — Adds these fields:
+```json
+{
+  "elapsed_time": 8.3,
+  "estimated_score": 1650,
+  "time_to_ground": 12.1,
+  "impact_speed": 21.4
+}
+```
+
+- `elapsed_time` — seconds since game start
+- `estimated_score` — score you'd get if you landed right now (0 if landing conditions not met)
+- `time_to_ground` — predicted seconds until impact assuming no thrust (null if ascending)
+- `impact_speed` — predicted speed at impact assuming no thrust (null if ascending)
 
 **`game_over`** — Game ended:
 ```json
@@ -111,8 +154,86 @@ Actions: `thrust`, `rotate_left`, `rotate_right`, `thrust_off`, `rotate_left_off
 ## Landing Criteria
 
 - Speed < 5.0 m/s
-- Angle < 17° from vertical
+- Angle < 0.3 radians (~17°) from vertical
 - On a landing zone
+
+## Useful Calculations
+
+The telemetry gives you everything you need. Here are common calculations for your bot logic:
+
+```python
+import math
+
+# From init (store these once)
+terrain = init["terrain"]
+zones = terrain["landing_zones"]
+constants = init["constants"]
+max_fuel = constants["max_fuel"]
+
+# From each telemetry frame
+lander = msg["lander"]
+zone = msg["nearest_landing_zone"]
+
+# --- Navigation ---
+# Am I over the landing zone?
+over_zone = zone["x1"] <= lander["x"] <= zone["x2"]
+
+# Landing zone center
+zone_center = (zone["x1"] + zone["x2"]) / 2
+
+# Horizontal error to target
+x_error = zone_center - lander["x"]
+
+# --- Safety checks ---
+# Speed from components (also available as msg["speed"])
+speed = math.sqrt(lander["vx"]**2 + lander["vy"]**2)
+
+# Safe to land?
+safe_speed = speed < 5.0                    # matches server threshold
+safe_angle = abs(lander["rotation"]) < 0.3  # radians, ~17 degrees
+
+# Angle in degrees (if you prefer)
+angle_deg = abs(lander["rotation"]) * 180 / math.pi
+
+# --- Fuel ---
+fuel_pct = lander["fuel"] / max_fuel
+
+# Seconds of thrust remaining
+thrust_time_left = lander["fuel"] / constants["fuel_consumption_rate"]
+
+# --- Physics predictions ---
+# How fast will I be falling in T seconds (no thrust)?
+def predict_vy(vy, t):
+    return vy + constants["gravity"] * t
+
+# How much altitude will I lose in T seconds (no thrust)?
+def predict_altitude_loss(vy, t):
+    return vy * t + 0.5 * constants["gravity"] * t**2
+
+# Thrust deceleration (when pointing up, rotation ≈ 0)
+# Net upward acceleration = thrust_power - gravity
+net_decel = constants["thrust_power"] - constants["gravity"]  # 6.38 m/s²
+
+# Seconds of thrust needed to stop from current vy
+if lander["vy"] > 0:
+    burn_time = lander["vy"] / net_decel
+    fuel_to_stop = burn_time * constants["fuel_consumption_rate"]
+```
+
+## Physics Constants Reference
+
+All constants are sent in the `init` message under `constants`:
+
+| Constant | Value | Unit | Description |
+|----------|-------|------|-------------|
+| `gravity` | 1.62 | m/s² | Lunar gravity (downward) |
+| `thrust_power` | 8.0 | m/s² | Thrust acceleration |
+| `rotation_speed` | 3.0 | rad/s | Rotation rate |
+| `fuel_consumption_rate` | 10.0 | units/s | Fuel burn while thrusting |
+| `max_fuel` | varies | units | Starting fuel for this game |
+| `max_landing_speed` | 5.0 | m/s | Max speed for safe landing |
+| `max_landing_angle` | 0.3 | rad | Max tilt for safe landing (~17°) |
+| `max_possible_score` | varies | points | Max score for this difficulty |
 
 ## Bot Management API
 
@@ -135,6 +256,8 @@ All endpoints require `Authorization: Bearer TOKEN` header.
 
 - Telemetry arrives at 60Hz — you don't need to respond to every frame
 - `vy` is positive downward — higher values mean falling faster
+- `rotation` is in radians — 0 is upright, positive is clockwise
 - Fuel is finite — use short thrust bursts
-- `rotation` is in degrees — 0 is upright
 - Start with `simple` difficulty, then try `medium` and `hard`
+- Store terrain from `init` — it's not resent in telemetry
+- The key insight: `thrust_power` (8.0) is ~5x `gravity` (1.62), so you have plenty of stopping power if you have fuel

@@ -7,10 +7,11 @@ Awarded for any successful landing.
 
 ### Fuel Bonus: 0-500 points
 - Based on remaining fuel percentage
-- Formula: `(fuel_remaining / 1000) * 500`
-- Full fuel (1000) = 500 bonus
-- Half fuel (500) = 250 bonus
-- Empty fuel (0) = 0 bonus
+- Formula: `(fuel_remaining / max_fuel) * 500`
+- `max_fuel` is provided in the `init` message under `constants`
+- Full fuel = 500 bonus
+- Half fuel = 250 bonus
+- Empty fuel = 0 bonus
 
 ### Time Bonus: 0-300 points
 - Faster landings earn more points

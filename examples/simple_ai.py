@@ -2,6 +2,16 @@
 """
 Simple AI client for Lunar Lander
 Demonstrates how to connect and play via WebSocket API
+
+Useful calculations (values available from init + telemetry):
+  over_zone     = zone["x1"] <= lander["x"] <= zone["x2"]
+  zone_center   = (zone["x1"] + zone["x2"]) / 2
+  safe_speed    = speed < 5.0
+  safe_angle    = abs(lander["rotation"]) < 0.3   # radians (~17°)
+  fuel_pct      = lander["fuel"] / constants["max_fuel"]
+  thrust_left_s = lander["fuel"] / constants["fuel_consumption_rate"]
+  net_decel     = constants["thrust_power"] - constants["gravity"]  # 6.38 m/s²
+  burn_to_stop  = lander["vy"] / net_decel  # seconds of thrust to zero vy
 """
 
 import asyncio
