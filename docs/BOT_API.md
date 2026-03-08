@@ -66,13 +66,11 @@ Bots authenticate via the `X-API-Key` header on the WebSocket connection. The se
 
 | Type | Fields | Description |
 |------|--------|-------------|
-| `start` | `difficulty`, `bot_name`, `bot_version`, `telemetry_mode` | Start a game |
+| `start` | `difficulty`, `bot_name`, `bot_version` | Start a game |
 | `input` | `action` | Send a control input |
 | `ping` | — | Keep-alive |
 
 Actions: `thrust`, `rotate_left`, `rotate_right`, `thrust_off`, `rotate_left_off`, `rotate_right_off`
-
-Telemetry modes: `standard` (default), `advanced` (adds prediction fields — see below)
 
 ### Messages you receive
 
@@ -121,21 +119,6 @@ Telemetry modes: `standard` (default), `advanced` (adds prediction fields — se
   "spectator_count": 3
 }
 ```
-
-**`telemetry` (advanced mode)** — Adds these fields:
-```json
-{
-  "elapsed_time": 8.3,
-  "estimated_score": 1650,
-  "time_to_ground": 12.1,
-  "impact_speed": 21.4
-}
-```
-
-- `elapsed_time` — seconds since game start
-- `estimated_score` — score you'd get if you landed right now (0 if landing conditions not met)
-- `time_to_ground` — predicted seconds until impact assuming no thrust (null if ascending)
-- `impact_speed` — predicted speed at impact assuming no thrust (null if ascending)
 
 **`game_over`** — Game ended:
 ```json
